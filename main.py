@@ -181,17 +181,17 @@ def run_selected_report(report_name: str):
 
 def import_new_code(code: str, name: str):
     if not code or not name:
-        return "Please provide both code and a report name."
+        return "Please provide both code and a report name.", gr.update(choices=get_report_choices())
     
     is_safe, error_msg = _scan_code_safety(code)
     if not is_safe:
-        return f"Security scan failed: {error_msg}"
+        return f"Security scan failed: {error_msg}", gr.update(choices=get_report_choices())
     
     success = db_manager.save_report(name, code)
     if success:
-        return f"Report '{name}' saved successfully!"
+        return f"Report '{name}' saved successfully!", gr.update(choices=get_report_choices())
     else:
-        return f"Report '{name}' already exists. Please use a different name."
+        return f"Report '{name}' already exists. Please use a different name.", gr.update(choices=get_report_choices())
 
 
 with gr.Blocks(title="BI Dashboard") as app:
@@ -243,7 +243,7 @@ with gr.Blocks(title="BI Dashboard") as app:
         code_input = gr.Code(label="Python Code", language="python", lines=20)
         import_result = gr.Textbox(label="Result", interactive=False)
         
-        import_btn.click(fn=import_new_code, inputs=[code_input, report_name], outputs=import_result)
+        import_btn.click(fn=import_new_code, inputs=[code_input, report_name], outputs=[import_result, report_dropdown])
 
     app.load(fn=on_app_load, outputs=load_status)
 
