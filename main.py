@@ -194,7 +194,7 @@ def import_new_code(code: str, name: str):
         return f"Report '{name}' already exists. Please use a different name."
 
 
-with gr.Blocks(title="BI Dashboard", theme=gr.themes.Soft()) as app:
+with gr.Blocks(title="BI Dashboard") as app:
     gr.Markdown("# 📊 Local BI Dashboard")
     gr.Markdown("Drop Excel or CSV files into `data-in/` to get started.")
     
@@ -213,7 +213,7 @@ with gr.Blocks(title="BI Dashboard", theme=gr.themes.Soft()) as app:
         with gr.Row():
             with gr.Column():
                 gr.Markdown("### Report Output")
-                output = gr.Component()  # Placeholder for dynamic component
+                output = gr.Dataframe(label="Report Output")
         
         with gr.Row():
             export_pdf_btn = gr.Button("Export to PDF", variant="secondary")

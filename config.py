@@ -15,7 +15,7 @@ ALLOWED_EXTENSIONS = {".csv", ".xlsx"}
 
 REPORT_TIMEOUT_SECONDS = 45
 
-ALLOWED_IMPORTS = {"pandas", "sqlite3", "gradio"}
+ALLOWED_IMPORTS = {"pandas", "sqlite3", "gradio", "json"}
 
 FORBIDDEN_PATTERNS = [
     "import os",

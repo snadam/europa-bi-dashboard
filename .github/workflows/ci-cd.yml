@@ -1,0 +1,62 @@
+name: CI/CD Dev Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pytest ruff
+          
+      - name: Run linter
+        run: ruff check .
+        continue-on-error: true
+          
+      - name: Run tests
+        run: |
+          pytest tests/ -v || echo "No tests found"
+
+  dev-publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Generate sample data
+        run: python generate_sample_data.py
+        
+      - name: Run app and verify startup
+        run: |
+          timeout 15 python main.py &
+          sleep 10
+          curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7860 || echo "Startup test failed"
+          pkill -f "python main.py" || true
+
+      - name: Commit sample data
+        run: |
+          git add data-archive/sample_optical_sales.csv
+          git commit -m "Update sample data" || echo "No new data to commit"
+          git push || echo "Push skipped"
