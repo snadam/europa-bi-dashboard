@@ -49,22 +49,19 @@ def _scan_code_safety(code: str) -> tuple[bool, str]:
 
 def _execute_report_in_process(code: str, db_path: str, result_queue: multiprocessing.Queue):
     try:
-        allowed_modules = {
-            "pandas": pandas,
-            "sqlite3": sqlite3,
-            "gradio": None,
-        }
-        allowed_modules["pandas"] = importlib.import_module("pandas")
+        import pandas
+        import sqlite3
+        import json
 
         restricted_globals = {
             "__builtins__": {},
-            "pandas": allowed_modules["pandas"],
+            "pandas": pandas,
             "sqlite3": sqlite3,
+            "json": json,
             "db_path": db_path,
         }
 
         conn = sqlite3.connect(db_path + "?mode=ro", uri=True)
-        restricted_globals["sqlite3"] = sqlite3
         restricted_locals = {}
 
         exec(code, restricted_globals, restricted_locals)
