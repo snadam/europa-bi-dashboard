@@ -155,8 +155,8 @@ def get_report_choices():
 
 
 def run_selected_report(report_name: str):
-    if not report_name:
-        return "Please select a report."
+    if not report_name or report_name == "Please select a report.":
+        return "Please select a report from the dropdown."
     
     reports = db_manager.get_reports()
     report = next((r for r in reports if r["name"] == report_name), None)
