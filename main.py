@@ -10,11 +10,175 @@ import traceback
 from datetime import datetime
 
 import gradio as gr
+from gradio import Theme
 import pandas as pd
 import sqlite3
 
 import config
 import db_manager
+
+custom_css = """
+:root {
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --secondary: #64748b;
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+}
+
+body {
+    background: var(--bg-main) !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+.gradio-container {
+    max-width: 1400px !important;
+    margin: 0 auto !important;
+}
+
+/* Header styling */
+.header {
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    padding: 1.5rem 2rem;
+    border-radius: 12px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    color: #ffffff !important;
+    font-size: 1.75rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+}
+
+.header p {
+    color: #94a3b8 !important;
+    font-size: 0.9rem !important;
+    margin: 0.5rem 0 0 0 !important;
+}
+
+/* Card styling */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Button styling */
+.btn-primary {
+    background: var(--primary) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    transition: all 0.2s !important;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+}
+
+/* Placeholder cards */
+.placeholder {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.placeholder-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.placeholder-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Status indicators */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-success {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Stats cards */
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* Tab styling */
+.tab-nav .tab-nav-item {
+    font-weight: 500 !important;
+    padding: 0.75rem 1.5rem !important;
+}
+
+.tab-nav .tab-nav-item.selected {
+    background: var(--primary) !important;
+    color: white !important;
+}
+"""
 
 logging.basicConfig(
     filename=config.LOGS_DIR / "main.log",
@@ -191,56 +355,164 @@ def import_new_code(code: str, name: str):
         return f"Report '{name}' already exists. Please use a different name.", gr.update(choices=get_report_choices())
 
 
-with gr.Blocks(title="BI Dashboard") as app:
-    gr.Markdown("# 📊 Local BI Dashboard")
-    gr.Markdown("Drop Excel or CSV files into `data-in/` to get started.")
+with gr.Blocks(title="BI Dashboard", css=custom_css) as app:
+    gr.Markdown("""
+    <div class="header">
+        <h1>📊 Europa BI Dashboard</h1>
+        <p>Self-hosted Business Intelligence for everyone</p>
+    </div>
+    """)
     
     with gr.Tab("Dashboard"):
         with gr.Row():
-            load_status = gr.Textbox(label="Status", interactive=False)
-        
-        with gr.Row():
-            report_dropdown = gr.Dropdown(
-                choices=get_report_choices(),
-                label="Select Report",
-                interactive=True
-            )
-            run_btn = gr.Button("Run Report", variant="primary")
-        
-        with gr.Row():
-            with gr.Column():
-                gr.Markdown("### Report Output")
-                output = gr.Dataframe(label="Report Output")
-        
-        with gr.Row():
-            export_pdf_btn = gr.Button("Export to PDF", variant="secondary")
-        
+            with gr.Column(scale=1):
+                gr.Markdown("### 📈 Quick Stats")
+                with gr.Row():
+                    gr.Markdown("""
+                    <div class="stat-card">
+                        <div class="stat-value">500</div>
+                        <div class="stat-label">Records</div>
+                    </div>
+                    """)
+                with gr.Row():
+                    gr.Markdown("""
+                    <div class="stat-card">
+                        <div class="stat-value">1</div>
+                        <div class="stat-label">Data Files</div>
+                    </div>
+                    """)
+                with gr.Row():
+                    gr.Markdown("""
+                    <div class="stat-card">
+                        <div class="stat-value">1</div>
+                        <div class="stat-label">Reports</div>
+                    </div>
+                    """)
+                
+                gr.Markdown("### ⚡ Actions")
+                load_status = gr.Textbox(label="Status", interactive=False)
+                refresh_btn = gr.Button("🔄 Refresh Data", variant="secondary", size="sm")
+                
+                gr.Markdown("### 📋 Reports")
+                report_dropdown = gr.Dropdown(
+                    choices=get_report_choices(),
+                    label="Select Report",
+                    interactive=True
+                )
+                run_btn = gr.Button("▶ Run Report", variant="primary")
+                
+            with gr.Column(scale=3):
+                gr.Markdown("### 📊 Report Output")
+                output = gr.Dataframe(label="", wrap=True, visible=True)
+                
+                gr.Markdown("### 📈 Charts")
+                gr.Markdown("""
+                <div class="placeholder">
+                    <div class="placeholder-icon">📊</div>
+                    <div class="placeholder-label">Chart Visualization Coming Soon</div>
+                    <p style="margin-top: 0.5rem; font-size: 0.8rem;">Connect to your AI to generate insights</p>
+                </div>
+                """)
+                
+                gr.Markdown("### 📤 Export")
+                with gr.Row():
+                    export_pdf_btn = gr.Button("📄 Export to PDF", variant="secondary")
+                    export_csv_btn = gr.Button("📊 Export to CSV", variant="secondary")
+
         run_btn.click(fn=run_selected_report, inputs=report_dropdown, outputs=output)
-        
-        with gr.Row():
-            gr.Markdown("*Refresh the page to update report list*")
+        refresh_btn.click(fn=on_app_load, outputs=load_status)
 
     with gr.Tab("Create Report"):
-        gr.Markdown("### Generate a Master Prompt")
-        gr.Markdown("Click below to create a prompt for your AI. Copy it, paste into ChatGPT/Gemini, then import the result.")
+        gr.Markdown("### 🤖 AI Report Generator")
+        gr.Markdown("Generate a prompt for your AI assistant, then import the generated code.")
         
-        prompt_btn = gr.Button("Generate Master Prompt", variant="primary")
-        master_prompt = gr.Textbox(label="Master Prompt", lines=15, interactive=False)
+        with gr.Row():
+            with gr.Column(scale=2):
+                prompt_btn = gr.Button("✨ Generate Master Prompt", variant="primary", size="lg")
+                master_prompt = gr.Textbox(
+                    label="Master Prompt", 
+                    lines=18, 
+                    interactive=False
+                )
+            with gr.Column(scale=1):
+                gr.Markdown("""
+                <div class="card">
+                    <div class="card-header">📋 Instructions</div>
+                    <ol style="padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.8;">
+                        <li>Click <strong>Generate Master Prompt</strong></li>
+                        <li>Copy the prompt</li>
+                        <li>Paste into ChatGPT/Gemini</li>
+                        <li>Copy the code response</li>
+                        <li>Go to <strong>Import Code</strong> tab</li>
+                        <li>Paste and save the code</li>
+                    </ol>
+                </div>
+                """)
         
         prompt_btn.click(fn=generate_master_prompt, outputs=master_prompt)
 
     with gr.Tab("Import Code"):
-        gr.Markdown("### Import AI-Generated Code")
-        gr.Markdown("Paste the Python code from your AI here.")
+        gr.Markdown("### 💾 Import AI-Generated Code")
         
         with gr.Row():
-            report_name = gr.Textbox(label="Report Name", placeholder="e.g., Monthly Sales Summary")
-            import_btn = gr.Button("Save Report", variant="primary")
+            report_name = gr.Textbox(
+                label="Report Name", 
+                placeholder="e.g., Monthly Sales Summary",
+                scale=1
+            )
+            import_btn = gr.Button("💾 Save Report", variant="primary", scale=1)
         
-        code_input = gr.Code(label="Python Code", language="python", lines=20)
-        import_result = gr.Textbox(label="Result", interactive=False)
+        code_input = gr.Code(
+            label="Python Code", 
+            language="python", 
+            lines=15
+        )
+        
+        import_result = gr.Textbox(label="Result", interactive=False, visible=True)
+        
+        with gr.Row():
+            gr.Markdown("""
+            <div class="placeholder" style="padding: 1rem;">
+                <div class="placeholder-icon">🔒</div>
+                <div class="placeholder-label" style="font-size: 0.75rem;">Security: Code is scanned before execution</div>
+            </div>
+            """)
         
         import_btn.click(fn=import_new_code, inputs=[code_input, report_name], outputs=[import_result, report_dropdown])
+
+    with gr.Tab("Settings"):
+        gr.Markdown("### ⚙️ Dashboard Settings")
+        
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown("""
+                <div class="card">
+                    <div class="card-header">📁 Data Directories</div>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        <strong>data-in/</strong> - Drop CSV/XLSX files here<br>
+                        <strong>data-archive/</strong> - Processed files
+                    </p>
+                </div>
+                """)
+            with gr.Column():
+                gr.Markdown("""
+                <div class="card">
+                    <div class="card-header">🔌 AI Connection</div>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                        Uses external AI (ChatGPT/Gemini)<br>
+                        No API keys required
+                    </p>
+                </div>
+                """)
+        
+        gr.Markdown("### 🔮 Coming Soon")
+        gr.Markdown("""
+        <div class="placeholder" style="padding: 1.5rem;">
+            <div class="placeholder-icon">✨</div>
+            <div class="placeholder-label">Scheduled Reports</div>
+            <p style="margin-top: 0.5rem; font-size: 0.8rem;">Automatically run reports on a schedule</p>
+        </div>
+        """)
 
     app.load(fn=on_app_load, outputs=load_status)
 
