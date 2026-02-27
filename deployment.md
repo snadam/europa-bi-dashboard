@@ -20,9 +20,31 @@ source venv/bin/activate  # Linux or: venv\Scripts\activate  # Windows
 # Install dependencies
 pip install -r requirements.txt
 
-# Run locally
-python main.py
+# Run locally as daemon (REQUIRED for background operation)
+# Using nohup ensures the process survives terminal session changes
+nohup python main.py > app.log 2>&1 &
+
+# Wait for startup
+sleep 10
+
+# Verify app is running
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7860
+# Should return 200
+
 # Access at http://127.0.0.1:7860
+```
+
+### Starting/Stopping the App
+
+```bash
+# Stop the app
+pkill -f "python main.py"
+
+# Start the app (daemon mode)
+nohup python main.py > app.log 2>&1 &
+
+# View logs
+tail -f app.log
 ```
 
 ## GitHub Actions Workflow
@@ -205,6 +227,21 @@ To replicate this setup:
 
 1. Clone the repo
 2. Install: `pip install -r requirements.txt`
-3. Run: `python main.py`
+3. Run (daemon mode): `nohup python main.py > app.log 2>&1 &`
 4. Test: Create workflow file in `.github/workflows/`
 5. Deploy: Build on Windows with PyInstaller
+
+## Dev Publish Script
+
+Use the included `dev_publish.sh` script for reliable deployment:
+
+```bash
+./dev_publish.sh
+```
+
+This script:
+- Installs dependencies
+- Generates sample data
+- Starts the app as a daemon using `nohup`
+- Verifies startup with curl
+- Tests data ingestion
