@@ -359,7 +359,7 @@ with gr.Blocks(title="BI Dashboard", css=custom_css) as app:
     gr.Markdown("""
     <div class="header">
         <div style="display: flex; align-items: center; gap: 1rem;">
-            <img src="file/../static/logo.svg" alt="Europa Eyewear" style="height: 48px; width: auto;">
+            <img src="file://static/logo.svg" alt="Europa Eyewear" style="height: 48px; width: auto;">
             <div>
                 <h1>BI Dashboard</h1>
                 <p>Self-hosted Business Intelligence for everyone</p>
